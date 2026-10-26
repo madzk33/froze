@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 function getInitialTheme() {
   if (typeof window === "undefined") return "light";
   try {
-    const stored = localStorage.getItem("sitemirror-theme");
+    const stored = localStorage.getItem("froze-theme");
     if (stored) return stored;
   } catch {
     /* ignore */
@@ -17,7 +17,7 @@ export default function ThemeToggle() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     try {
-      localStorage.setItem("sitemirror-theme", theme);
+      localStorage.setItem("froze-theme", theme);
     } catch {
       /* ignore */
     }

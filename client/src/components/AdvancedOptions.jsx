@@ -97,7 +97,7 @@ export default function AdvancedOptions({ options, setOptions }) {
           <option value="chrome">Chrome (desktop)</option>
           <option value="firefox">Firefox (desktop)</option>
           <option value="safari">Safari (desktop)</option>
-          <option value="bot">SiteMirrorBot (identifies itself)</option>
+          <option value="bot">FrozeBot (identifies itself)</option>
         </select>
       </div>
 

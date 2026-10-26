@@ -4,7 +4,7 @@ import path from "node:path";
 import archiver from "archiver";
 
 function readmeText({ startUrl, rootFolderName, crawlSummary }) {
-  return `SiteMirror — offline archive of ${startUrl}
+  return `Froze — offline archive of ${startUrl}
 =====================================================
 
 Generated: ${new Date().toISOString()}
@@ -64,7 +64,7 @@ and terms of service.
 
 function servePyText() {
   return `#!/usr/bin/env python3
-"""Tiny static file server for this SiteMirror archive.
+"""Tiny static file server for this Froze archive.
 Usage: python3 serve.py [port]   (default port: 8000)
 """
 import http.server
@@ -84,7 +84,7 @@ Handler.extensions_map.update({
 })
 
 with socketserver.TCPServer(("", port), Handler) as httpd:
-    print(f"Serving SiteMirror archive at http://localhost:{port}")
+    print(f"Serving Froze archive at http://localhost:{port}")
     httpd.serve_forever()
 `;
 }
@@ -92,10 +92,10 @@ with socketserver.TCPServer(("", port), Handler) as httpd:
 function packageJsonText() {
   return JSON.stringify(
     {
-      name: "sitemirror-archive",
+      name: "froze-archive",
       private: true,
       version: "1.0.0",
-      description: "Offline SiteMirror archive — static site, no build needed.",
+      description: "Offline Froze archive — static site, no build needed.",
       scripts: { start: "npx serve -l 8000 ." },
     },
     null,

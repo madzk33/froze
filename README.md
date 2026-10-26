@@ -1,4 +1,4 @@
-# SiteMirror
+# Froze
 
 Paste a URL, get back a ZIP that's a faithful, offline-browsable copy of that
 site — extract it, run one command, and it looks and works like the original
@@ -33,11 +33,11 @@ docker compose up --build
 ```
 
 Then open **http://localhost:8787** — the same Express server serves the
-built frontend and the API on one port. (Or `docker build -t sitemirror . && docker run -p 8787:8787 sitemirror`.)
+built frontend and the API on one port. (Or `docker build -t froze . && docker run -p 8787:8787 froze`.)
 
 ## Deploying it live (public)
 
-SiteMirror is **not** a static site — the backend runs a headless browser,
+Froze is **not** a static site — the backend runs a headless browser,
 holds job state in memory, streams progress over SSE, and writes temp files, so
 it needs a **container host** (Render, Railway, Fly.io, or a VPS), not a
 static/serverless host like GitHub Pages or Vercel functions. The included
@@ -134,7 +134,7 @@ frontend and backend share an origin, so no proxy/config is needed at all.
 ## Example ZIP structure
 
 ```
-sitemirror-example.com.zip
+froze-example.com.zip
 └── example.com/
     ├── README.txt              ← how to run it locally + limitations
     ├── serve.py                ← python3 serve.py [port]
@@ -175,7 +175,7 @@ strings get a short content hash appended to their filename so
 
 ## JavaScript rendering mode
 
-By default SiteMirror is a plain HTTP + HTML/CSS crawler — fast, but it only
+By default Froze is a plain HTTP + HTML/CSS crawler — fast, but it only
 sees what the server actually sends. Many modern sites (React/Vue/Next SPAs)
 ship an near-empty HTML shell and build the real page with JavaScript after
 load; those pages mirror as blank or broken without rendering.
@@ -194,7 +194,7 @@ render mode. A client-rendered app (React/Vue/Next/etc.) is a problem to
 archive: if you just save its HTML, opening the mirror re-runs the app's
 JavaScript, which re-mounts with an *empty* state (wiping the captured
 content) and re-fetches its data live from the origin's API — which fails
-offline, leaving a blank page. To solve this, while rendering, SiteMirror
+offline, leaving a blank page. To solve this, while rendering, Froze
 **records every data response the page fetches** (the JSON/XHR APIs it calls)
 and **every image/media file it loads**. It saves those recordings into the
 page and injects a small shim that runs before the site's own scripts,

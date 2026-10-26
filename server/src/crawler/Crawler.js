@@ -102,7 +102,7 @@ export class Crawler {
     maxTotalSizeMB = 400,
     includeExternalAssets = false,
     respectRobots = true,
-    userAgent = "SiteMirrorBot/1.0 (+offline-archiver)",
+    userAgent = "FrozeBot/1.0 (+offline-archiver)",
     concurrency = 6,
     delayMs = 150,
     renderJs = false,

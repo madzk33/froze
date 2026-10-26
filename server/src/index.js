@@ -30,7 +30,7 @@ const USER_AGENTS = {
   chrome: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
   firefox: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
   safari: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
-  bot: "SiteMirrorBot/1.0 (+offline-archiver; respects robots.txt)",
+  bot: "FrozeBot/1.0 (+offline-archiver; respects robots.txt)",
 };
 
 // Hard ceilings — independent of what the client requests — to prevent abuse.
@@ -118,7 +118,7 @@ app.get("/api/jobs/:id/download", (req, res) => {
   if (!job || job.status !== "done") return res.status(404).json({ error: "not ready" });
   const domain = new URL(job.options.startUrl).hostname.replace(/[^a-z0-9.-]/gi, "_");
   if (!fs.existsSync(job.zipPath)) return res.status(410).json({ error: "expired" });
-  res.download(job.zipPath, `sitemirror-${domain}.zip`);
+  res.download(job.zipPath, `froze-${domain}.zip`);
 });
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
@@ -132,5 +132,5 @@ if (fs.existsSync(clientDist)) {
 }
 
 app.listen(PORT, () => {
-  console.log(`SiteMirror API listening on http://localhost:${PORT}`);
+  console.log(`Froze API listening on http://localhost:${PORT}`);
 });

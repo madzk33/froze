@@ -46,7 +46,7 @@ function Wordmark() {
       </span>
       <div className="leading-none">
         <span className="block text-base font-bold tracking-tight" translate="no">
-          SiteMirror
+          Froze
         </span>
         <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           offline archiver

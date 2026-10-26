@@ -4,7 +4,7 @@
 # from the Express server, so one service is the entire site.
 services:
   - type: web
-    name: sitemirror
+    name: froze
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: starter # the free plan spins down when idle; "starter" stays warm. Pick what you want.

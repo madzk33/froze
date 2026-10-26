@@ -43,7 +43,7 @@ export default function ResultPanel({ result, downloadHref, onReset }) {
       const a = document.createElement("a");
       a.href = url;
       const match = /filename="?([^"]+)"?/.exec(res.headers.get("content-disposition") || "");
-      a.download = match ? match[1] : "sitemirror.zip";
+      a.download = match ? match[1] : "froze.zip";
       document.body.appendChild(a);
       a.click();
       a.remove();
