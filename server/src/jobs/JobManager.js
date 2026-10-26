@@ -41,6 +41,14 @@ export class JobManager {
     return this.jobs.get(id);
   }
 
+  runningCount() {
+    let n = 0;
+    for (const job of this.jobs.values()) {
+      if (["queued", "running", "rewriting", "writing", "zipping"].includes(job.status)) n++;
+    }
+    return n;
+  }
+
   cancel(id) {
     const job = this.jobs.get(id);
     if (!job) return false;

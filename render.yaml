@@ -1,0 +1,20 @@
+# Render.com blueprint — deploys the whole app (API + built frontend) as one
+# Docker web service. In the Render dashboard: New → Blueprint → point at this
+# repo, and it reads this file. The Dockerfile builds the client and serves it
+# from the Express server, so one service is the entire site.
+services:
+  - type: web
+    name: sitemirror
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # the free plan spins down when idle; "starter" stays warm. Pick what you want.
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production # enables SSRF protection + tighter public abuse caps
+      - key: SSRF_PROTECT
+        value: "1"
+      - key: MAX_CONCURRENT_JOBS
+        value: "3"
+      - key: PORT
+        value: "8787"

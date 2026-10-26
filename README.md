@@ -35,11 +35,51 @@ docker compose up --build
 Then open **http://localhost:8787** — the same Express server serves the
 built frontend and the API on one port. (Or `docker build -t sitemirror . && docker run -p 8787:8787 sitemirror`.)
 
+## Deploying it live (public)
+
+SiteMirror is **not** a static site — the backend runs a headless browser,
+holds job state in memory, streams progress over SSE, and writes temp files, so
+it needs a **container host** (Render, Railway, Fly.io, or a VPS), not a
+static/serverless host like GitHub Pages or Vercel functions. The included
+`Dockerfile` builds the frontend and serves it from the Express server, so the
+whole app is **one container on one port**.
+
+**Render (one blueprint):** push this repo to GitHub, then in Render do
+*New → Blueprint* and point it at the repo — it reads [`render.yaml`](render.yaml),
+which already sets `NODE_ENV=production` (enabling the safeguards below). Any
+Docker-capable host works the same way with the env vars in the table below.
+
+### Safety when public
+
+A crawler that will fetch any URL is, exposed to the internet, a **server-side
+request forgery (SSRF)** risk — visitors could aim it at the host's own private
+network or the cloud metadata endpoint (`169.254.169.254`) to steal
+credentials. Public mode (on whenever `NODE_ENV=production` or `SSRF_PROTECT=1`)
+turns on:
+
+- **SSRF protection** (`server/src/crawler/ssrf.js`): every outbound target —
+  the entry URL, every crawled page/asset, redirects, and every request the
+  headless browser makes — is DNS-resolved and refused unless it's an ordinary
+  **public** address. Loopback, RFC-1918 private ranges, link-local (incl. the
+  metadata IP), unique-local v6, CGNAT, multicast and reserved ranges are all
+  blocked, with a connect-time re-check that also defeats DNS-rebinding.
+- **Rate limiting**: 5 crawls per minute per IP.
+- **A global concurrency cap** (`MAX_CONCURRENT_JOBS`, default 3) so one visitor
+  can't tie up the box.
+- **Tighter abuse ceilings**: depth 4, 60 pages, 150 MB per crawl (vs. the
+  generous local limits).
+
+Locally these are **off** by default so you can still mirror `http://localhost`
+test sites; set `SSRF_PROTECT=1` to exercise them in dev.
+
 ## Environment variables
 
 | Variable | Where | Default | Purpose |
 |---|---|---|---|
 | `PORT` | server | `8787` | Port the Express API (and, in Docker, the built frontend) listens on. |
+| `NODE_ENV` | server | — | `production` enables SSRF protection + public abuse caps. |
+| `SSRF_PROTECT` | server | off | Set to `1` to force SSRF protection on (implied by `NODE_ENV=production`). |
+| `MAX_CONCURRENT_JOBS` | server | 3 public / 100 local | Hard cap on crawls running at once across all visitors. |
 
 The frontend needs no environment variables in dev — Vite's dev server proxies
 `/api/*` to `http://localhost:8787` (see `client/vite.config.js`). In Docker,

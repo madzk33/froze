@@ -1,11 +1,14 @@
 import robotsParser from "robots-parser";
+import { assertPublicHost, getSafeDispatcher } from "./ssrf.js";
 
 export async function fetchRobots(startUrl, userAgent) {
   const robotsUrl = new URL("/robots.txt", startUrl).toString();
   try {
+    await assertPublicHost(new URL(robotsUrl).hostname);
     const res = await fetch(robotsUrl, {
       headers: { "User-Agent": userAgent },
       signal: AbortSignal.timeout(10_000),
+      dispatcher: getSafeDispatcher(),
     });
     if (!res.ok) return robotsParser(robotsUrl, "");
     const body = await res.text();

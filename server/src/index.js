@@ -1,15 +1,30 @@
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import fs from "node:fs";
 import path from "node:path";
 import { JobManager } from "./jobs/JobManager.js";
+import { assertPublicHost, ssrfEnabled } from "./crawler/ssrf.js";
 
 const PORT = process.env.PORT || 8787;
+const PUBLIC = ssrfEnabled(); // tighter limits + rate limiting when exposed publicly
+const MAX_CONCURRENT_JOBS = Number(process.env.MAX_CONCURRENT_JOBS) || (PUBLIC ? 3 : 100);
 const app = express();
+app.set("trust proxy", 1); // behind a platform proxy (Render/Railway/Fly) so rate-limit sees the real IP
 const jobs = new JobManager();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "64kb" }));
+
+// Cap how often one IP can kick off a crawl — each job is heavy (a headless
+// browser + arbitrary downloads), so this is the first line against abuse.
+const createJobLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: PUBLIC ? 5 : 1000,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Too many crawls started. Please wait a minute and try again." },
+});
 
 const USER_AGENTS = {
   chrome: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -19,7 +34,10 @@ const USER_AGENTS = {
 };
 
 // Hard ceilings — independent of what the client requests — to prevent abuse.
-const LIMITS = { maxDepth: 10, maxPages: 1000, maxTotalSizeMB: 1000, concurrency: 16 };
+// Public instances get much tighter caps than a trusted local/self-host run.
+const LIMITS = PUBLIC
+  ? { maxDepth: 4, maxPages: 60, maxTotalSizeMB: 150, concurrency: 4 }
+  : { maxDepth: 10, maxPages: 1000, maxTotalSizeMB: 1000, concurrency: 16 };
 
 function clamp(n, lo, hi, fallback) {
   const v = Number(n);
@@ -27,15 +45,28 @@ function clamp(n, lo, hi, fallback) {
   return Math.max(lo, Math.min(hi, v));
 }
 
-app.post("/api/jobs", (req, res) => {
+app.post("/api/jobs", createJobLimiter, async (req, res) => {
   const body = req.body || {};
-  let startUrl;
+  let startUrl, hostname;
   try {
     const u = new URL(body.startUrl);
     if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad protocol");
     startUrl = u.toString();
+    hostname = u.hostname;
   } catch {
     return res.status(400).json({ error: "Please enter a valid http(s) URL." });
+  }
+
+  // Reject internal/metadata targets up front with a clear message (the crawler
+  // enforces this again at fetch time; this is the friendly early rejection).
+  try {
+    await assertPublicHost(hostname);
+  } catch {
+    return res.status(400).json({ error: "That address can't be mirrored — only public websites are allowed." });
+  }
+
+  if (jobs.runningCount() >= MAX_CONCURRENT_JOBS) {
+    return res.status(429).json({ error: "The server is busy with other crawls right now. Please try again shortly." });
   }
 
   const options = {

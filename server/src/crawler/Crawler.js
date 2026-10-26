@@ -13,6 +13,7 @@ import {
 import { extractCssUrls, rewriteCssUrls, parseSrcset, buildSrcset } from "./cssUtils.js";
 import { launchBrowser, newRenderContext, renderPage } from "./browserRenderer.js";
 import { buildReplayShim } from "./replayShim.js";
+import { assertPublicHost, getSafeDispatcher, guardBrowserContext } from "./ssrf.js";
 
 const PAGE_LINK_SELECTORS = "a[href], area[href]";
 const ASSET_ATTR_SELECTORS = [
@@ -210,6 +211,7 @@ export class Crawler {
       this._emit({ phase: "crawling", currentUrl: "Starting headless browser…" });
       browser = await launchBrowser();
       this.browserContext = await newRenderContext(browser, this.userAgent);
+      await guardBrowserContext(this.browserContext);
     }
 
     try {
@@ -311,11 +313,16 @@ export class Crawler {
     } else {
       let res;
       try {
+        await assertPublicHost(new URL(item.url).hostname);
         res = await fetch(item.url, {
           headers: { "User-Agent": this.userAgent, Accept: "*/*" },
           redirect: "follow",
           signal: AbortSignal.timeout(20_000),
+          dispatcher: getSafeDispatcher(),
         });
+        // A redirect could land on an internal host/IP; re-check the final URL
+        // before any of its bytes are written into the mirror.
+        await assertPublicHost(new URL(res.url).hostname);
       } catch (err) {
         if (item.optional) return;
         throw new Error(`fetch failed: ${err.message}`);
